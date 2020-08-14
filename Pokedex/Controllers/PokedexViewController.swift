@@ -9,7 +9,11 @@
 import UIKit
 import CoreData
 
-class PokedexTableViewController: UITableViewController {
+class PokedexViewController: UIViewController {
+    
+    @IBOutlet weak var pokemonTableView: UITableView!
+    @IBOutlet weak var pokemonCollectionView: UICollectionView!
+    @IBOutlet weak var switchButton: UIButton!
     
     var pokemons = [Pokemon]()
     var pokemonsDisplayed = [Pokemon]()
@@ -33,19 +37,53 @@ class PokedexTableViewController: UITableViewController {
         
     }
     
+    @IBAction func switchView(_ sender: UIButton) {
+        pokemonCollectionView.isHidden = !pokemonCollectionView.isHidden
+        pokemonTableView.isHidden = !pokemonTableView.isHidden
+        
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
         initializeContent()
-        
+        pokemonCollectionView.isHidden = false
+        pokemonTableView.isHidden = true
     }
     
-    //MARK: - Tableview Data Source Methods
     
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    
+
+
+}
+
+//MARK: - CollectionView Data Source Methods
+
+extension PokedexViewController : UICollectionViewDelegate, UICollectionViewDataSource {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return pokemonsDisplayed.count
     }
     
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PokemonCollectionCell", for: indexPath) as! PokemonCollectionViewCell
+        
+        cell.name.text = pokemonsDisplayed[indexPath.item].name
+        cell.id.text = "#" + String(format: "%03d", pokemonsDisplayed[indexPath.item].id)
+        let url = self.pokemonsDisplayed[indexPath.item].image
+        cell.image.load(url: URL(string: url)!)
+        
+        return cell
+    }
+    
+}
+
+//MARK: - Tableview Data Source Methods
+
+extension PokedexViewController : UITableViewDelegate, UITableViewDataSource {
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return pokemonsDisplayed.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PokemonCell", for: indexPath) as! PokemonTableViewCell
         cell.name.text = pokemonsDisplayed[indexPath.row].name
         cell.id.text = "#" + String(format: "%03d", pokemonsDisplayed[indexPath.row].id)
@@ -55,23 +93,25 @@ class PokedexTableViewController: UITableViewController {
         return cell
     }
     
-    //MARK: - Tableview Data Methods
-
 }
 
-extension PokedexTableViewController : UISearchBarDelegate {
+
+extension PokedexViewController : UISearchBarDelegate {
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         self.pokemonsDisplayed = pokemons.filter { (pokemon) -> Bool in
             pokemon.name.lowercased().contains(searchBar.text!.lowercased())
         }
-        tableView.reloadData()
+        pokemonTableView.reloadData()
+        pokemonCollectionView.reloadData()
+        
     }
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         if searchBar.text?.count == 0 {
             self.pokemonsDisplayed = self.pokemons
-            tableView.reloadData()
+            pokemonTableView.reloadData()
+            pokemonCollectionView.reloadData()
             
             DispatchQueue.main.async {
                 searchBar.resignFirstResponder()
@@ -80,6 +120,7 @@ extension PokedexTableViewController : UISearchBarDelegate {
         }
     }
 }
+
 
 extension UIImageView {
     func load(url: URL) {
